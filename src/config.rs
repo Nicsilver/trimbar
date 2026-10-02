@@ -12,6 +12,9 @@ use windows::core::{PCWSTR, w};
 const RUN_KEY: PCWSTR = w!(r"Software\Microsoft\Windows\CurrentVersion\Run");
 const RUN_VALUE: PCWSTR = w!("Trimbar");
 
+/// Stored alongside the per-monitor heights; device paths never collide with it.
+pub const FIT_KEY: &str = "fit_fullscreen";
+
 fn path() -> PathBuf {
     let base = std::env::var_os("APPDATA").map(PathBuf::from).unwrap_or_else(|| PathBuf::from("."));
     base.join("Trimbar").join("config.txt")

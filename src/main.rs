@@ -1,6 +1,7 @@
 #![windows_subsystem = "windows"]
 
 mod config;
+mod fullscreen;
 mod monitors;
 mod panel;
 
@@ -38,6 +39,7 @@ const TIMER_REBUILD: usize = 2;
 const CMD_ADJUST: i32 = 1;
 const CMD_AUTOSTART: i32 = 2;
 const CMD_EXIT: i32 = 3;
+const CMD_FIT: i32 = 4;
 
 const MAIN_CLASS: PCWSTR = w!("TrimbarMain");
 const STRIP_CLASS: PCWSTR = w!("TrimbarStrip");
@@ -140,8 +142,12 @@ fn main() {
         .map(|h| HICON(h.0))
         .unwrap_or_default();
 
-        let saved = config::load();
+        let mut saved = config::load();
         let first_run = saved.is_none();
+        if let Some(v) = saved.as_mut().and_then(|s| s.remove(config::FIT_KEY)) {
+            fullscreen::ENABLED.store(v != 0, Ordering::Relaxed);
+        }
+        fullscreen::install();
         if first_run || config::autostart_enabled() {
             // Rewriting it on every start keeps the Run entry valid if the exe was moved.
             config::set_autostart(true);
@@ -260,6 +266,18 @@ impl App {
                 self.strips.push(strip);
             }
         }
+        let targets = self
+            .strips
+            .iter()
+            .map(|s| fullscreen::Target { monitor: self.mons[s.mon].rect, cut: s.rect.top })
+            .collect();
+        fullscreen::set_targets(targets);
+    }
+
+    fn persist(&self) {
+        let mut map = self.saved.clone();
+        map.insert(config::FIT_KEY.to_string(), fullscreen::ENABLED.load(Ordering::Relaxed) as i32);
+        let _ = config::save(&map);
     }
 
     fn create_strip(&self, mon: usize, height: i32) -> Option<Strip> {
@@ -432,7 +450,7 @@ impl App {
         if save {
             // Extend rather than replace: keeps trims for monitors that are unplugged right now.
             self.saved.extend(setup.draft);
-            let _ = config::save(&self.saved);
+            self.persist();
             self.apply_strips();
         } else {
             for s in &self.strips {
@@ -479,6 +497,13 @@ fn show_menu(hwnd: HWND) {
             CMD_AUTOSTART as usize,
             w!("Start with Windows"),
         );
+        let fit = fullscreen::ENABLED.load(Ordering::Relaxed);
+        let _ = AppendMenuW(
+            menu,
+            MF_STRING | if fit { MF_CHECKED } else { MF_UNCHECKED },
+            CMD_FIT as usize,
+            w!("Keep fullscreen apps above the trim"),
+        );
         let _ = AppendMenuW(menu, MF_SEPARATOR, 0, PCWSTR::null());
         let _ = AppendMenuW(menu, MF_STRING, CMD_EXIT as usize, w!("Exit"));
         let _ = SetMenuDefaultItem(menu, CMD_ADJUST as u32, 0);
@@ -494,6 +519,11 @@ fn show_menu(hwnd: HWND) {
         match cmd.0 {
             CMD_ADJUST => post_main(WM_OPEN_SETUP, 0),
             CMD_AUTOSTART => config::set_autostart(!autostart),
+            CMD_FIT => {
+                fullscreen::ENABLED.store(!fit, Ordering::Relaxed);
+                with_app(|a| a.persist());
+                fullscreen::fit_all();
+            }
             CMD_EXIT => {
                 with_app(|a| a.shutdown());
                 PostQuitMessage(0);
