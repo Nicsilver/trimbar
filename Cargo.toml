@@ -1,0 +1,30 @@
+[package]
+name = "trimbar"
+version = "0.1.0"
+edition = "2024"
+description = "Hide dead pixel rows at the bottom of a monitor: reserves a strip so windows and maximize stay out of it"
+repository = "https://github.com/Nicsilver/trimbar"
+license = "MIT"
+
+[dependencies]
+windows = { version = "0.62.2", features = [
+    "Win32_Foundation",
+    "Win32_Graphics_Gdi",
+    "Win32_Security",
+    "Win32_System_LibraryLoader",
+    "Win32_System_Registry",
+    "Win32_System_Threading",
+    "Win32_UI_HiDpi",
+    "Win32_UI_Input_KeyboardAndMouse",
+    "Win32_UI_Shell",
+    "Win32_UI_WindowsAndMessaging",
+] }
+
+[build-dependencies]
+winresource = "0.1.31"
+
+[profile.release]
+opt-level = "z"
+lto = true
+strip = true
+panic = "abort"
