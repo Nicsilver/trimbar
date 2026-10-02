@@ -12,7 +12,8 @@ use windows::Win32::System::Threading::GetCurrentProcessId;
 use windows::Win32::UI::Accessibility::{HWINEVENTHOOK, SetWinEventHook};
 use windows::Win32::UI::WindowsAndMessaging::{
     EVENT_OBJECT_LOCATIONCHANGE, EVENT_SYSTEM_FOREGROUND, EnumWindows, GA_ROOT, GetAncestor, GetClassNameW,
-    GetWindowRect, GetWindowThreadProcessId, IsIconic, IsWindow, IsWindowVisible, SWP_ASYNCWINDOWPOS,
+    GetWindowRect, GetWindowThreadProcessId, IsIconic, IsWindow, IsWindowVisible, KillTimer, SET_WINDOW_POS_FLAGS,
+    SWP_ASYNCWINDOWPOS, SetTimer,
     SWP_NOACTIVATE, SWP_NOOWNERZORDER, SWP_NOSENDCHANGING, SWP_NOZORDER, SetWindowPos, WINEVENT_OUTOFCONTEXT,
     WINEVENT_SKIPOWNPROCESS,
 };
@@ -49,6 +50,7 @@ pub fn install() {
 }
 
 pub fn set_targets(targets: Vec<Target>) {
+    crate::inject::publish(&targets);
     TARGETS.with(|t| *t.borrow_mut() = targets);
     fit_all();
 }
@@ -87,6 +89,12 @@ fn fit(hwnd: HWND) {
         if !IsWindowVisible(hwnd).as_bool() || IsIconic(hwnd).as_bool() || GetAncestor(hwnd, GA_ROOT) != hwnd {
             return;
         }
+        // Hook browsers as early as possible, before they ever go fullscreen.
+        let (browser, fresh) = crate::inject::ensure(hwnd);
+        if fresh {
+            // The DLL loads asynchronously; check again once it has.
+            SetTimer(None, 0, 500, Some(refit_later));
+        }
         let mut r = RECT::default();
         if GetWindowRect(hwnd, &mut r).is_err() {
             return;
@@ -107,9 +115,11 @@ fn fit(hwnd: HWND) {
         if is_shell_or_own(hwnd) || !note_attempt(hwnd) {
             return;
         }
-        // Async: a hung app must not block our message loop. NOSENDCHANGING: Chromium rewrites any
-        // resize of a fullscreen window back to rcMonitor in its WM_WINDOWPOSCHANGING handler, so it
-        // must not get that message (hwnd_message_handler.cc, OnWindowPosChanging).
+        // A hooked browser recomputes its fullscreen rect from the trimmed monitor info inside
+        // WM_WINDOWPOSCHANGING, so it must get that message. Other apps must not: like unhooked
+        // Chromium, some rewrite any resize of a fullscreen window back to rcMonitor there.
+        let changing = if browser { SET_WINDOW_POS_FLAGS(0) } else { SWP_NOSENDCHANGING };
+        // Async: a hung app must not block our message loop.
         let _ = SetWindowPos(
             hwnd,
             None,
@@ -117,9 +127,16 @@ fn fit(hwnd: HWND) {
             m.top,
             m.right - m.left,
             cut - m.top,
-            SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOOWNERZORDER | SWP_NOSENDCHANGING | SWP_ASYNCWINDOWPOS,
+            SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOOWNERZORDER | changing | SWP_ASYNCWINDOWPOS,
         );
     }
+}
+
+unsafe extern "system" fn refit_later(_: HWND, _: u32, id: usize, _: u32) {
+    unsafe {
+        let _ = KillTimer(None, id);
+    }
+    fit_all();
 }
 
 fn is_shell_or_own(hwnd: HWND) -> bool {

@@ -2,6 +2,7 @@
 
 mod config;
 mod fullscreen;
+mod inject;
 mod monitors;
 mod panel;
 
@@ -147,6 +148,7 @@ fn main() {
         if let Some(v) = saved.as_mut().and_then(|s| s.remove(config::FIT_KEY)) {
             fullscreen::ENABLED.store(v != 0, Ordering::Relaxed);
         }
+        inject::init();
         fullscreen::install();
         if first_run || config::autostart_enabled() {
             // Rewriting it on every start keeps the Run entry valid if the exe was moved.
@@ -462,6 +464,7 @@ impl App {
     }
 
     fn shutdown(&mut self) {
+        inject::shutdown();
         self.close_setup();
         self.remove_strips();
         self.tray(NIM_DELETE);

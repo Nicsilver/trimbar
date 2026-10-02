@@ -13,9 +13,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
-      - run: cargo build --release
+      - run: cargo build --release --workspace
+      - name: Package
+        shell: pwsh
+        run: Compress-Archive -Path target/release/trimbar.exe, target/release/trimbar_hook.dll -DestinationPath trimbar.zip
       - name: Publish release
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release create "$GITHUB_REF_NAME" target/release/trimbar.exe --title "$GITHUB_REF_NAME" --generate-notes
+        run: gh release create "$GITHUB_REF_NAME" trimbar.zip --title "$GITHUB_REF_NAME" --generate-notes
