@@ -13,7 +13,7 @@ use windows::Win32::UI::Accessibility::{HWINEVENTHOOK, SetWinEventHook};
 use windows::Win32::UI::WindowsAndMessaging::{
     EVENT_OBJECT_LOCATIONCHANGE, EVENT_SYSTEM_FOREGROUND, EnumWindows, GA_ROOT, GetAncestor, GetClassNameW,
     GetWindowRect, GetWindowThreadProcessId, IsIconic, IsWindow, IsWindowVisible, SWP_ASYNCWINDOWPOS,
-    SWP_NOACTIVATE, SWP_NOOWNERZORDER, SWP_NOZORDER, SetWindowPos, WINEVENT_OUTOFCONTEXT,
+    SWP_NOACTIVATE, SWP_NOOWNERZORDER, SWP_NOSENDCHANGING, SWP_NOZORDER, SetWindowPos, WINEVENT_OUTOFCONTEXT,
     WINEVENT_SKIPOWNPROCESS,
 };
 use windows::core::BOOL;
@@ -107,7 +107,9 @@ fn fit(hwnd: HWND) {
         if is_shell_or_own(hwnd) || !note_attempt(hwnd) {
             return;
         }
-        // Async: a hung app must not block our message loop.
+        // Async: a hung app must not block our message loop. NOSENDCHANGING: Chromium rewrites any
+        // resize of a fullscreen window back to rcMonitor in its WM_WINDOWPOSCHANGING handler, so it
+        // must not get that message (hwnd_message_handler.cc, OnWindowPosChanging).
         let _ = SetWindowPos(
             hwnd,
             None,
@@ -115,7 +117,7 @@ fn fit(hwnd: HWND) {
             m.top,
             m.right - m.left,
             cut - m.top,
-            SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOOWNERZORDER | SWP_ASYNCWINDOWPOS,
+            SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOOWNERZORDER | SWP_NOSENDCHANGING | SWP_ASYNCWINDOWPOS,
         );
     }
 }
