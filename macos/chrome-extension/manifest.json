@@ -1,11 +1,12 @@
 {
   "manifest_version": 3,
   "name": "Trimbar",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "Keeps fullscreen video above the strip Trimbar hides at the bottom of a dying monitor.",
   "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA0PZ3QNiuPbDwOsNYQDhnfa0/QLw1V/mfmhJHJZD+lOji5wbNbCOb7k3IpOA0MUeQ3dbK2ko3noN+Uwb4utOId2h/Dgxa4T3fZPlcncTSfEZz7b08UGRScsjiVaEjOwVbeqH+XBwaCwOhim/fYSFPLvii5XfIQfhyd6rP0qYT7yeq9Ttw2Ulyg/wxkL1BI3lePmf0aFnazYM9rmVlBJWpbIHKlSqK3ZNzXCQXO6Og7BBKG1o+tKXBFQR0CtswJb/020BR20Q6c2GwliQSKMkNH26Cc6gOsjHk8Cq2CYIYi47e7/iLClUIMGmchUGLyzKmDi1IZE+ZMnT6vRSiqfo07QIDAQAB",
   "icons": { "128": "icon128.png" },
-  "permissions": ["nativeMessaging", "storage"],
+  "permissions": ["nativeMessaging", "scripting", "storage"],
+  "host_permissions": ["<all_urls>"],
   "background": { "service_worker": "background.js" },
   "content_scripts": [
     {

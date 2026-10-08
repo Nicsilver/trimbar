@@ -1,5 +1,13 @@
 const HOST = 'io.github.nicsilver.trimbar';
 
+// Chrome only injects content scripts into pages loaded after install or update, so tabs that were
+// already open would ignore the trim until reloaded.
+chrome.runtime.onInstalled.addListener(async () => {
+  for (const tab of await chrome.tabs.query({})) {
+    chrome.scripting.executeScript({ target: { tabId: tab.id }, files: ['content.js'] }).catch(() => {});
+  }
+});
+
 async function fetchTargets() {
   try {
     const reply = await chrome.runtime.sendNativeMessage(HOST, {});
