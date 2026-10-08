@@ -1,4 +1,5 @@
-"""Generate assets/trimbar.ico (multi-size app + tray icon) and assets/icon.png (README).
+"""Generate assets/trimbar.ico (Windows app + tray icon), assets/trimbar.icns (macOS app icon)
+and assets/icon.png (README).
 
 Run from the repo root: python tools/make_icon.py
 Requires Pillow (pip install pillow).
@@ -36,6 +37,7 @@ def main() -> None:
     icon.save(
         "assets/trimbar.ico", sizes=[(n, n) for n in sizes]
     )
+    master.save("assets/trimbar.icns")
 
 
 if __name__ == "__main__":

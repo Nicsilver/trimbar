@@ -8,7 +8,7 @@ permissions:
   contents: write
 
 jobs:
-  build:
+  windows:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
@@ -17,8 +17,31 @@ jobs:
       - name: Package
         shell: pwsh
         run: Compress-Archive -Path target/release/trimbar.exe, target/release/trimbar_hook.dll -DestinationPath trimbar.zip
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows
+          path: trimbar.zip
+
+  macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: macos/build.sh
+      - name: Package
+        run: ditto -c -k --keepParent macos/build/Trimbar.app trimbar-macos.zip
+      - uses: actions/upload-artifact@v4
+        with:
+          name: macos
+          path: trimbar-macos.zip
+
+  release:
+    needs: [windows, macos]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          merge-multiple: true
       - name: Publish release
-        shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release create "$GITHUB_REF_NAME" trimbar.zip --title "$GITHUB_REF_NAME" --generate-notes
+        run: gh release create "$GITHUB_REF_NAME" trimbar.zip trimbar-macos.zip --repo "$GITHUB_REPOSITORY" --title "$GITHUB_REF_NAME" --generate-notes
