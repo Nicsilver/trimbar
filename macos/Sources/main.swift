@@ -26,6 +26,8 @@ final class App: NSObject, NSApplicationDelegate {
         if firstRun {
             Config.setAutostart(true)
         }
+        ChromeHost.register()
+        ChromeHost.syncExtension()
 
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
         if let button = statusItem.button {
@@ -195,6 +197,7 @@ final class App: NSObject, NSApplicationDelegate {
         if !AXIsProcessTrusted() {
             menu.addItem(item("Allow window control…", #selector(menuAccessibility)))
         }
+        menu.addItem(item("Install Chrome extension…", #selector(menuExtension)))
         menu.addItem(.separator())
         menu.addItem(item("Quit Trimbar", #selector(menuQuit)))
         guard let button = statusItem.button else { return }
@@ -225,6 +228,10 @@ final class App: NSObject, NSApplicationDelegate {
         NSWorkspace.shared.open(URL(string: url)!)
     }
 
+    @objc private func menuExtension() {
+        ChromeHost.showInstallSteps()
+    }
+
     @objc private func menuQuit() {
         NSApp.terminate(nil)
     }
@@ -244,6 +251,10 @@ private func statusIcon() -> NSImage {
     }
     image.isTemplate = true
     return image
+}
+
+if ChromeHost.isInvoked {
+    ChromeHost.serve()
 }
 
 let app = NSApplication.shared

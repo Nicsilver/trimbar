@@ -36,7 +36,8 @@ The exe isn't code-signed, so SmartScreen may warn on first run ("More info" the
 
 - macOS has no way to shrink the area windows zoom and tile into, so Trimbar watches windows instead. When a window ends inside the strip, it is pushed back above it: zoomed and tiled windows are shortened, other windows are moved up. Windows are left alone while you drag them, and apps that keep snapping back are left alone after a few tries. Toggle it in the menu.
 - It needs Accessibility access to move other apps' windows. macOS asks on first launch; you can also grant it under System Settings, Privacy & Security, Accessibility, or from the menu.
-- Native fullscreen (the green button, and fullscreen video in browsers) gets its own space that other apps can't resize, so it still covers the dead rows.
+- Fullscreen video in Chrome, Edge, Brave, Vivaldi and Arc gets its own space that no other app can resize, so a small browser extension shrinks it from the inside instead: the whole player, controls included, is scaled down to end above the strip, with black where the strip is. Install it once from the menu (**Install Chrome extension…**): turn on Developer mode on the extensions page, click **Load unpacked** and pick the folder Finder shows. The extension asks Trimbar for the trims, so there is nothing to set up in it.
+- Other native fullscreen windows (the green button) can't be resized either, so they still cover the dead rows.
 - If the Dock sits at the bottom of a trimmed display, it stays in the strip. Move it to the side or put it on another display.
 - Starts at login by default. Toggle it in the menu.
 - Settings live in `~/Library/Application Support/Trimbar/config.txt`, keyed by the display's UUID. Heights are in points, so on a Retina display 1 step is 2 pixels.

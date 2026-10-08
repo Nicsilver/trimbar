@@ -14,5 +14,6 @@ lipo -create build/Trimbar-arm64 build/Trimbar-x86_64 -output "$app/Contents/Mac
 rm build/Trimbar-arm64 build/Trimbar-x86_64
 cp Info.plist "$app/Contents/"
 cp ../assets/trimbar.icns "$app/Contents/Resources/"
+cp -R chrome-extension "$app/Contents/Resources/"
 codesign --force --sign - "$app"
 echo "Built $PWD/$app"

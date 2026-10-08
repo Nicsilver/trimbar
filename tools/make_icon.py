@@ -1,5 +1,5 @@
-"""Generate assets/trimbar.ico (Windows app + tray icon), assets/trimbar.icns (macOS app icon)
-and assets/icon.png (README).
+"""Generate assets/trimbar.ico (Windows app + tray icon), assets/trimbar.icns (macOS app icon),
+macos/chrome-extension/icon128.png and assets/icon.png (README).
 
 Run from the repo root: python tools/make_icon.py
 Requires Pillow (pip install pillow).
@@ -38,6 +38,7 @@ def main() -> None:
         "assets/trimbar.ico", sizes=[(n, n) for n in sizes]
     )
     master.save("assets/trimbar.icns")
+    master.resize((128, 128), Image.LANCZOS).save("macos/chrome-extension/icon128.png")
 
 
 if __name__ == "__main__":
